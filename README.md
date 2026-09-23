@@ -1,6 +1,6 @@
-# 1-2-3 DÔ! 🇻🇳🍻
+# 1-2-3 DZÔ! 🍻
 
-A simple digital drinking game inspired by the classic **“1-2-3 DÔ!”** (Một, Hai, Ba, Dô!) tradition at Vietnamese parties and gatherings.
+A simple digital drinking game inspired by the classic **“1-2-3 DZÔ!”** (Một, Hai, Ba, Dzô!) tradition at Vietnamese parties and gatherings.
 
 Spin the wheel, let luck choose the result, and keep the party going!
 
@@ -9,7 +9,7 @@ Spin the wheel, let luck choose the result, and keep the party going!
 1. Open the game.
 2. Tap **SPIN**.
 3. The wheel randomly selects a result.
-4. Follow the result and shout **“1-2-3 DÔ!”** 🍻
+4. Follow the result and shout **“1-2-3 DZÔ!”** 🍻
 
 No app installation required. Just open it in a web browser and play.
 
