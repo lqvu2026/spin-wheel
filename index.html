@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>1-2-3-DZO</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;min-height:100%;font-family:Arial,sans-serif;background:#f0f0f0}
+body{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:12px}
+h1{margin:2px 0;color:#333;text-transform:uppercase;letter-spacing:2px;font-size:clamp(24px,7vw,36px);text-align:center}
+h2{margin:2px 0 14px;color:#888;font-weight:normal;font-size:18px}
+.wheel-container{position:relative;width:min(92vw,500px);aspect-ratio:1}
+canvas{display:block;width:100%;height:100%;border-radius:50%;box-shadow:0 4px 10px rgba(0,0,0,.2);touch-action:manipulation}
+.spin-btn{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:76px;height:76px;background:#000;color:#fff;border:4px solid #fff;border-radius:50%;font-weight:bold;font-size:17px;cursor:pointer;box-shadow:0 0 10px rgba(0,0,0,.5);z-index:10;display:flex;align-items:center;justify-content:center;user-select:none;-webkit-user-select:none}
+.spin-btn:active{transform:translate(-50%,-50%) scale(.94)}
+.pointer{position:absolute;top:50%;left:50%;transform:translate(-50%,-100%);width:0;height:0;border-left:13px solid transparent;border-right:13px solid transparent;border-bottom:27px solid #000;z-index:9;margin-top:-32px;pointer-events:none}
+.result-modal{margin-top:16px;min-height:54px;width:min(92vw,500px);display:flex;align-items:center;justify-content:center;text-align:center;font-size:20px;font-weight:bold;color:#d9534f}
+.again{display:none;margin-top:2px;padding:11px 20px;border:0;border-radius:22px;background:#333;color:#fff;font-weight:bold;font-size:15px}
+@media (max-height:700px) and (orientation:landscape){
+ body{padding:5px} h1{font-size:22px} h2{margin-bottom:5px}
+ .wheel-container{width:min(70vh,420px)} .result-modal{margin-top:4px;min-height:30px}
+}
+</style>
+</head>
+<body>
+<h1>CẠN LY - DZÔ!!!</h1>
+<h2>Spin the wheel</h2>
+
+<div class="wheel-container">
+  <div class="pointer"></div>
+  <button class="spin-btn" id="spinBtn">SPIN</button>
+  <canvas id="wheelCanvas" width="800" height="800"></canvas>
+</div>
+
+<div class="result-modal" id="resultText"></div>
+<button class="again" id="againBtn">SPIN AGAIN</button>
+
+<script>
+const canvas=document.getElementById('wheelCanvas');
+const ctx=canvas.getContext('2d');
+const spinBtn=document.getElementById('spinBtn');
+const againBtn=document.getElementById('againBtn');
+const resultText=document.getElementById('resultText');
+
+const segments=[
+{text:"Uống 2 ly",color:"#e74c3c"},
+{text:"Quay lại",color:"#2ecc71"},
+{text:"Uống 1 ly",color:"#e74c3c"},
+{text:"Bên trái 1 ly",color:"#3498db"},
+{text:"Qua tua",color:"#f1c40f"},
+{text:"Chỉ ai 1 ly",color:"#e84393"},
+{text:"2 bên 1 ly",color:"#34495e"},
+{text:"Bên phải 1 ly",color:"#2980b9"},
+{text:"Uống 1/2 ly",color:"#2ecc71"},
+{text:"Uống 2 ly",color:"#e74c3c"},
+{text:"Quay lại",color:"#2ecc71"},
+{text:"Uống 1 ly",color:"#e74c3c"},
+{text:"Bên trái 1 ly",color:"#3498db"},
+{text:"Qua tua",color:"#f1c40f"},
+{text:"Chỉ ai 1 ly",color:"#e84393"},
+{text:"2 bên 1 ly",color:"#34495e"},
+{text:"Bên phải 1 ly",color:"#2980b9"},
+{text:"Uống 1/2 ly",color:"#2ecc71"}
+];
+
+const n=segments.length, arc=2*Math.PI/n;
+let currentAngle=0,isSpinning=false;
+
+// --- Sound effects (Web Audio API, no external files needed) ---
+let audioCtx=null;
+function getAudioCtx(){
+  if(!audioCtx){
+    audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+  }
+  if(audioCtx.state==="suspended"){audioCtx.resume();}
+  return audioCtx;
+}
+function playTick(strength){
+  try{
+    const ac=getAudioCtx();
+    const osc=ac.createOscillator();
+    const gain=ac.createGain();
+    osc.type="square";
+    osc.frequency.value=1000+Math.random()*200;
+    const vol=0.05+0.1*strength;
+    gain.gain.setValueAtTime(vol,ac.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001,ac.currentTime+0.05);
+    osc.connect(gain);gain.connect(ac.destination);
+    osc.start();
+    osc.stop(ac.currentTime+0.05);
+  }catch(e){}
+}
+function playWinChime(){
+  try{
+    const ac=getAudioCtx();
+    const notes=[880,1108,1318];
+    notes.forEach((freq,i)=>{
+      const osc=ac.createOscillator();
+      const gain=ac.createGain();
+      osc.type="sine";
+      osc.frequency.value=freq;
+      const t0=ac.currentTime+i*0.12;
+      gain.gain.setValueAtTime(0.0001,t0);
+      gain.gain.exponentialRampToValueAtTime(0.15,t0+0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001,t0+0.35);
+      osc.connect(gain);gain.connect(ac.destination);
+      osc.start(t0);osc.stop(t0+0.4);
+    });
+  }catch(e){}
+}
+
+function drawWheel(){
+ const cx=canvas.width/2,cy=canvas.height/2,r=canvas.width/2;
+ ctx.clearRect(0,0,canvas.width,canvas.height);
+ for(let i=0;i<n;i++){
+   const a=currentAngle+i*arc;
+   ctx.beginPath();ctx.fillStyle=segments[i].color;
+   ctx.moveTo(cx,cy);ctx.arc(cx,cy,r,a,a+arc);ctx.lineTo(cx,cy);ctx.fill();
+   ctx.strokeStyle="#fff";ctx.lineWidth=3;ctx.stroke();
+   ctx.save();
+   ctx.fillStyle="#fff";
+   ctx.font="bold 28px Arial";
+   ctx.translate(cx,cy);ctx.rotate(a+arc/2);
+   ctx.textAlign="right";ctx.textBaseline="middle";
+   ctx.fillText(segments[i].text,r-28,0);
+   ctx.restore();
+ }
+}
+
+function spin(){
+ if(isSpinning)return;
+ isSpinning=true;resultText.textContent="";againBtn.style.display="none";
+ getAudioCtx();
+ const rounds=5+Math.floor(Math.random()*5);
+ const extra=Math.random()*2*Math.PI;
+ const total=rounds*2*Math.PI+extra;
+ const duration=4000,start=performance.now(),startAngle=currentAngle;
+ let lastSegCrossed=Math.floor((startAngle%arc)/arc*1000);
+ let ticksPlayed=0;
+ function animate(now){
+   const p=Math.min((now-start)/duration,1);
+   const ease=1-Math.pow(1-p,3);
+   currentAngle=startAngle+total*ease;
+   drawWheel();
+
+   // play a tick each time the wheel crosses a segment boundary
+   const traveled=currentAngle-startAngle;
+   const segsCrossed=Math.floor(traveled/arc);
+   if(segsCrossed>ticksPlayed){
+     ticksPlayed=segsCrossed;
+     playTick(1-p); // louder/sharper early, softer as it slows
+   }
+
+   if(p<1)requestAnimationFrame(animate);
+   else{isSpinning=false;getWinner();againBtn.style.display="inline-block";playWinChime();}
+ }
+ requestAnimationFrame(animate);
+}
+
+function getWinner(){
+ const normalized=(2*Math.PI-(currentAngle%(2*Math.PI)))%(2*Math.PI);
+ const pointer=(3*Math.PI/2+normalized)%(2*Math.PI);
+ const index=Math.floor(pointer/arc);
+ resultText.textContent="Kết quả: "+segments[index].text;
+}
+
+spinBtn.addEventListener("click",spin);
+againBtn.addEventListener("click",spin);
+drawWheel();
+</script>
+</body>
+</html>
