@@ -20,7 +20,7 @@ No app installation required. Just open it in a web browser and play.
 ## 📱 Features
 
 * 🎡 Random spinning wheel
-* 🇻🇳 Vietnamese-inspired party theme
+* Vietnamese-inspired party theme
 * 📱 Works on phones, tablets, and computers
 * ⚡ No installation required
 * 🎉 Designed for casual parties and gatherings
