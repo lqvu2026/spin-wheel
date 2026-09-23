@@ -15,7 +15,7 @@ No app installation required. Just open it in a web browser and play.
 
 ## 🌐 Play Online
 
-**[Play 1-2-3 DÔ!](https://lqvu2026.github.io/spin-wheel/)**
+**[Play 1-2-3 DZÔ!](https://lqvu2026.github.io/spin-wheel/)**
 
 ## 📱 Features
 
