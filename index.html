@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<title>1-2-3-DZO</title>
+<title>1-2-3 DZÔ</title>
 <style>
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;min-height:100%;font-family:Arial,sans-serif;background:#f0f0f0}
@@ -26,8 +26,8 @@ canvas{display:block;width:100%;height:100%;border-radius:50%;box-shadow:0 4px 1
 </style>
 </head>
 <body>
-<h1>CẠN LY - DZÔ!!!</h1>
-<h2>Spin the wheel</h2>
+<h1>1-2-3 DZÔ!!!</h1>
+<h2>Spin the wheel – Quay vòng vòng</h2>
 
 <div class="wheel-container">
   <div class="pointer"></div>
@@ -81,16 +81,21 @@ function getAudioCtx(){
 function playTick(strength){
   try{
     const ac=getAudioCtx();
-    const osc=ac.createOscillator();
-    const gain=ac.createGain();
-    osc.type="square";
-    osc.frequency.value=1000+Math.random()*200;
-    const vol=0.05+0.1*strength;
-    gain.gain.setValueAtTime(vol,ac.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001,ac.currentTime+0.05);
-    osc.connect(gain);gain.connect(ac.destination);
-    osc.start();
-    osc.stop(ac.currentTime+0.05);
+    // Bell-like "ding": sine fundamental + bright inharmonic partial, soft attack, ring-out
+    const t0=ac.currentTime;
+    const base=1320;
+    const vol=0.16+0.08*strength;
+    [[1,1,0.45],[2.76,0.35,0.22],[5.4,0.12,0.1]].forEach(([mult,amp,decay])=>{
+      const osc=ac.createOscillator();
+      const gain=ac.createGain();
+      osc.type="sine";
+      osc.frequency.value=base*mult;
+      gain.gain.setValueAtTime(0.0001,t0);
+      gain.gain.exponentialRampToValueAtTime(vol*amp,t0+0.004);
+      gain.gain.exponentialRampToValueAtTime(0.0001,t0+decay);
+      osc.connect(gain);gain.connect(ac.destination);
+      osc.start(t0);osc.stop(t0+decay+0.05);
+    });
   }catch(e){}
 }
 function playWinChime(){
@@ -134,24 +139,27 @@ function spin(){
  if(isSpinning)return;
  isSpinning=true;resultText.textContent="";againBtn.style.display="none";
  getAudioCtx();
- const rounds=5+Math.floor(Math.random()*5);
+ const rounds=5+Math.floor(Math.random()*2); // 5 or 6 full rounds
  const extra=Math.random()*2*Math.PI;
  const total=rounds*2*Math.PI+extra;
- const duration=4000,start=performance.now(),startAngle=currentAngle;
- let lastSegCrossed=Math.floor((startAngle%arc)/arc*1000);
- let ticksPlayed=0;
+ const duration=7000,start=performance.now(),startAngle=currentAngle;
+ let ticksPlayed=0,lastDing=-1000;
  function animate(now){
    const p=Math.min((now-start)/duration,1);
-   const ease=1-Math.pow(1-p,3);
+   const ease=1-Math.pow(1-p,4);
    currentAngle=startAngle+total*ease;
    drawWheel();
 
-   // play a tick each time the wheel crosses a segment boundary
+   // "ding" each time the wheel crosses a segment boundary,
+   // with a minimum gap so fast spinning stays "ding, ding, ding" instead of a buzz
    const traveled=currentAngle-startAngle;
    const segsCrossed=Math.floor(traveled/arc);
    if(segsCrossed>ticksPlayed){
      ticksPlayed=segsCrossed;
-     playTick(1-p); // louder/sharper early, softer as it slows
+     if(now-lastDing>=120){
+       lastDing=now;
+       playTick(1-p);
+     }
    }
 
    if(p<1)requestAnimationFrame(animate);
